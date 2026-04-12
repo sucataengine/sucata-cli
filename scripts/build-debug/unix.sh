@@ -5,6 +5,6 @@ set -e
 echo "Building debug Sucata CLI for Unix..."
 
 echo "Building debug sucata CLI..."
-odin build . -out:sucata -debug -sanitize:address
+odin build src/ -out:sucata -debug -sanitize:address
 
 echo "Done!"
