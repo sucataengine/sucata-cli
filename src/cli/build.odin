@@ -1,0 +1,52 @@
+package cli
+
+import build "../build"
+import "../common"
+import "../filesystem"
+import "core:os"
+import "core:path/filepath"
+
+BUILD_COMMAND :: Command {
+	command = "build",
+	args_size = 1,
+	info_msg = "sucata build <file> [--icon <path>] - Build a Sucata Lua script file",
+	error_msg = "Error: 'build' command requires a <file> argument.",
+	handler = proc(args: []string) {
+		file_path := args[0]
+		current_dir := os.get_current_directory()
+		defer delete(current_dir)
+		file_path = filepath.join({current_dir, file_path})
+		defer delete(file_path)
+
+		filesystem.init_run_paths(file_path)
+
+		icon_path := ""
+		for i := 1; i < len(args); i += 1 {
+			if args[i] == "--icon" && i + 1 < len(args) {
+				icon_path = filepath.join({current_dir, args[i + 1]})
+				i += 1
+			}
+		}
+
+		common.print_info("Building Sucata from main script: %s", filesystem.location.file)
+		if icon_path != "" {
+			common.print_info("Building with icon: %s", icon_path)
+		}
+
+		build_path := filepath.join({filesystem.location.build, "build"})
+		defer delete(build_path)
+		os.make_directory(build_path)
+		assets_hash := build.generate_assets(
+			filesystem.location.src,
+			filesystem.location.file,
+			build_path,
+		)
+		defer delete(assets_hash)
+
+		build.clone_engine(build_path, assets_hash, icon_path)
+
+		common.print_success("Sucateado! Game builded on %s", build_path)
+
+		filesystem.uninit_paths()
+	},
+}
