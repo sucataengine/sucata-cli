@@ -6,8 +6,6 @@ import "core:log"
 import "core:os/os2"
 import "core:strings"
 
-version := ""
-
 get_player_name :: proc() -> string {
 	when ODIN_OS == .Windows {
 		return "sucata-player.exe"
@@ -22,7 +20,7 @@ get_player_version :: proc() -> string {
 	)
 
 	if err != nil || state.exit_code != 0 {
-		return "unknown"
+		return strings.clone("unknown")
 	}
 
 	version := strings.trim_right_space(string(stdout))
@@ -31,8 +29,8 @@ get_player_version :: proc() -> string {
 
 main :: proc() {
 	context.logger = log.create_console_logger()
-	version = get_player_version()
+	cli.version = get_player_version()
+	defer delete(cli.version)
 
 	cli.main()
-	free(&version)
 }

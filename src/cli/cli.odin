@@ -2,6 +2,8 @@ package cli
 
 import "../common"
 
+version := ""
+
 parse_cli :: proc(cmds: Command, args: []string) {
 	if len(args) == 0 {
 		help_commands(cmds, args)
