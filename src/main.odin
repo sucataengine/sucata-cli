@@ -1,6 +1,6 @@
 package main
 
-import cli "./src/cli"
+import cli "./cli"
 import "base:runtime"
 import "core:log"
 import "core:os/os2"
