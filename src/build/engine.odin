@@ -64,11 +64,13 @@ clone_lua_dll :: proc(output_dir: string) {
 	source_path := filesystem.get_sucata_folder()
 	defer delete(source_path)
 	lua_dll_path := filepath.join({source_path, LUA_DLL_FILE_NAME})
+	defer delete(lua_dll_path)
 
 	lua_dll_data, read_ok := os.read_entire_file(lua_dll_path)
 	defer delete(lua_dll_data)
 
 	output_path := filepath.join({output_dir, LUA_DLL_FILE_NAME})
+	defer delete(output_path)
 
 	output_handle, open_err := os.open(output_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0o755)
 	defer os.close(output_handle)
@@ -80,11 +82,13 @@ clone_sdl_dll :: proc(output_dir: string) {
 	source_path := filesystem.get_sucata_folder()
 	defer delete(source_path)
 	sdl_dll_path := filepath.join({source_path, SDL_DLL_FILE_NAME})
+	defer delete(sdl_dll_path)
 
 	sdl_dll_data, read_ok := os.read_entire_file(sdl_dll_path)
 	defer delete(sdl_dll_data)
 
 	output_path := filepath.join({output_dir, SDL_DLL_FILE_NAME})
+	defer delete(output_path)
 
 	output_handle, open_err := os.open(output_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0o755)
 	defer os.close(output_handle)
