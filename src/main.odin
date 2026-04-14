@@ -4,7 +4,6 @@ import "./cli"
 import "./common"
 import "./update"
 import "base:runtime"
-import "core:fmt"
 import "core:log"
 import "core:os"
 import "core:strings"
@@ -39,13 +38,9 @@ main :: proc() {
 	cli.version = get_player_version()
 	defer delete(cli.version)
 
-	version, is_old_version := update.check_version(cli.version)
-	defer delete(version)
+	is_old_version := update.check_version(cli.version)
 	if is_old_version {
-		common.print_warning(
-			"A new version is available! Sucata %s use: 'sucata update' to install",
-			version,
-		)
+		common.print_warning("A new version is available! Use: 'sucata update' to install")
 	}
 
 	cli.main()

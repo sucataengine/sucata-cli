@@ -9,7 +9,11 @@ UPDATE_COMMAND :: Command {
 	info_msg = "sucata update - Update sucata to the lastest version",
 	error_msg = "Error: 'update' command.",
 	handler = proc(args: []string) {
-		common.print("Updating sucata...")
-		update.update_sucata()
+		if update.check_version(version) {
+			common.print("Updating sucata...")
+			update.update_sucata()
+		} else {
+			common.print_success("Sucata is already in the last version!")
+		}
 	},
 }

@@ -21,11 +21,13 @@ get_last_version :: proc() -> (string, bool) {
 	return strings.clone(body.(client.Body_Plain)), false
 }
 
-check_version :: proc(current_version: string) -> (string, bool) {
+check_version :: proc(current_version: string) -> bool {
 	last_version, err := get_last_version()
+	defer delete(last_version)
+
 	if err {
-		return strings.clone(""), false
+		return false
 	}
 
-	return last_version, !strings.equal_fold(current_version, last_version)
+	return !strings.equal_fold(current_version, last_version)
 }
