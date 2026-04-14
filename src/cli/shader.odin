@@ -4,7 +4,6 @@ import "../common"
 import "../filesystem"
 import "../shaderbuilder"
 import "core:fmt"
-import "core:os"
 import "core:path/filepath"
 import "core:strings"
 
@@ -24,10 +23,10 @@ SHADER_BUILD_COMMAND :: Command {
 		if !strings.has_suffix(file_path_args, ".glsl") {
 			file_path_args = fmt.tprintf("%s.glsl", file_path_args)
 		}
-		current_directory := os.get_current_directory()
+		current_directory, _ := filepath.abs(".", context.allocator)
 		defer delete(current_directory)
 
-		file_path := filepath.join({current_directory, file_path_args})
+		file_path, _ := filepath.join({current_directory, file_path_args}, context.allocator)
 
 		filesystem.init_run_paths(file_path, "shader.glsl")
 
@@ -47,35 +46,28 @@ SHADER_BUILD_COMMAND :: Command {
 SHADER_CREATE_COMMAND :: Command {
 	command = "create",
 	args_size = 1,
-	info_msg = "sucata shader create <file> [--post-procesing] [--font] - Create a base .glsl shader file",
+	info_msg = "sucata shader create <file> [--post-processing/-pp] [--font/-f] - Create a base .glsl shader file",
 	error_msg = "Error: 'create' command requires a <file> argument.",
 	handler = proc(args: []string) {
 		file_path_args := args[0]
 		if !strings.has_suffix(file_path_args, ".glsl") {
 			file_path_args = fmt.tprintf("%s.glsl", file_path_args)
 		}
-		current_directory := os.get_current_directory()
+		current_directory, _ := filepath.abs(".", context.allocator)
 		defer delete(current_directory)
-		file_path := filepath.join({current_directory, file_path_args})
+		file_path, _ := filepath.join({current_directory, file_path_args}, context.allocator)
 		defer delete(file_path)
 
 		aditional_flags := args[1:]
 		is_post_processing := false
+		is_grayscale := false
 		is_font_shader := false
 		for flag in aditional_flags {
-			if flag == "--post-processing" {
+			if flag == "--post-processing" || flag == "-pp" {
 				is_post_processing = true
 				break
 			}
-			if flag == "-pp" {
-				is_post_processing = true
-				break
-			}
-			if flag == "--font" {
-				is_font_shader = true
-				break
-			}
-			if flag == "-f" {
+			if flag == "--font" || flag == "-f" {
 				is_font_shader = true
 				break
 			}

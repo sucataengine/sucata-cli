@@ -13,9 +13,9 @@ BUILD_COMMAND :: Command {
 	error_msg = "Error: 'build' command requires a <file> argument.",
 	handler = proc(args: []string) {
 		file_path := args[0]
-		current_dir := os.get_current_directory()
+		current_dir, _ := filepath.abs(".", context.allocator)
 		defer delete(current_dir)
-		file_path = filepath.join({current_dir, file_path})
+		file_path, _ = filepath.join({current_dir, file_path}, context.allocator)
 		defer delete(file_path)
 
 		filesystem.init_run_paths(file_path)
@@ -23,7 +23,7 @@ BUILD_COMMAND :: Command {
 		icon_path := ""
 		for i := 1; i < len(args); i += 1 {
 			if args[i] == "--icon" && i + 1 < len(args) {
-				icon_path = filepath.join({current_dir, args[i + 1]})
+				icon_path, _ = filepath.join({current_dir, args[i + 1]}, context.allocator)
 				i += 1
 			}
 		}
@@ -33,7 +33,7 @@ BUILD_COMMAND :: Command {
 			common.print_info("Building with icon: %s", icon_path)
 		}
 
-		build_path := filepath.join({filesystem.location.build, "build"})
+		build_path, _ := filepath.join({filesystem.location.build, "build"}, context.allocator)
 		defer delete(build_path)
 		os.make_directory(build_path)
 		assets_hash := build.generate_assets(

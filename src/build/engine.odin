@@ -21,14 +21,14 @@ clone_engine :: proc(output_dir: string, assets_hash: string, icon_path: string 
 	defer delete(player_path)
 	common.print_info("Cloning engine from: %s", player_path)
 
-	engine_data, read_ok := os.read_entire_file(player_path)
+	engine_data, _ := os.read_entire_file_from_path(player_path, context.allocator)
 	defer delete(engine_data)
 
 	engine_name := filesystem.location.name
 	if filesystem.location.system == "windows" {
 		engine_name = fmt.tprintf("{0}.exe", engine_name)
 	}
-	output_path := filepath.join({output_dir, engine_name})
+	output_path, _ := filepath.join({output_dir, engine_name}, context.allocator)
 	defer delete(output_path)
 
 	if filesystem.location.system == "darwin" {
@@ -36,7 +36,7 @@ clone_engine :: proc(output_dir: string, assets_hash: string, icon_path: string 
 		return
 	}
 
-	output_handle, open_err := os.open(output_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0o755)
+	output_handle, open_err := os.open(output_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
 	defer os.close(output_handle)
 
 	os.write(output_handle, engine_data)
@@ -63,16 +63,16 @@ clone_engine :: proc(output_dir: string, assets_hash: string, icon_path: string 
 clone_lua_dll :: proc(output_dir: string) {
 	source_path := filesystem.get_sucata_folder()
 	defer delete(source_path)
-	lua_dll_path := filepath.join({source_path, LUA_DLL_FILE_NAME})
+	lua_dll_path, _ := filepath.join({source_path, LUA_DLL_FILE_NAME}, context.allocator)
 	defer delete(lua_dll_path)
 
-	lua_dll_data, read_ok := os.read_entire_file(lua_dll_path)
+	lua_dll_data, _ := os.read_entire_file_from_path(lua_dll_path, context.allocator)
 	defer delete(lua_dll_data)
 
-	output_path := filepath.join({output_dir, LUA_DLL_FILE_NAME})
+	output_path, _ := filepath.join({output_dir, LUA_DLL_FILE_NAME}, context.allocator)
 	defer delete(output_path)
 
-	output_handle, open_err := os.open(output_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0o755)
+	output_handle, open_err := os.open(output_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
 	defer os.close(output_handle)
 
 	os.write(output_handle, lua_dll_data)
@@ -81,22 +81,22 @@ clone_lua_dll :: proc(output_dir: string) {
 clone_sdl_dll :: proc(output_dir: string) {
 	source_path := filesystem.get_sucata_folder()
 	defer delete(source_path)
-	sdl_dll_path := filepath.join({source_path, SDL_DLL_FILE_NAME})
+	sdl_dll_path, _ := filepath.join({source_path, SDL_DLL_FILE_NAME}, context.allocator)
 	defer delete(sdl_dll_path)
 
-	sdl_dll_data, read_ok := os.read_entire_file(sdl_dll_path)
+	sdl_dll_data, _ := os.read_entire_file_from_path(sdl_dll_path, context.allocator)
 	defer delete(sdl_dll_data)
 
-	output_path := filepath.join({output_dir, SDL_DLL_FILE_NAME})
+	output_path, _ := filepath.join({output_dir, SDL_DLL_FILE_NAME}, context.allocator)
 	defer delete(output_path)
 
-	output_handle, open_err := os.open(output_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0o755)
+	output_handle, open_err := os.open(output_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
 	defer os.close(output_handle)
 
 	os.write(output_handle, sdl_dll_data)
 }
 
-write_build_header :: proc(output_handle: os.Handle, assets_hash: string) {
+write_build_header :: proc(output_handle: $H, assets_hash: string) {
 	build_header_hash := fmt.aprintf("{0}{1}", BUILD_HEADER, assets_hash)
 	defer delete(build_header_hash)
 
@@ -115,19 +115,19 @@ create_macos_app_bundle :: proc(
 	icon_path: string = "",
 ) {
 	app_name := fmt.tprintf("{0}.app", engine_name)
-	app_path := filepath.join({output_dir, app_name})
+	app_path, _ := filepath.join({output_dir, app_name}, context.allocator)
 
-	contents_path := filepath.join({app_path, "Contents"})
-	macos_path := filepath.join({contents_path, "MacOS"})
-	resources_path := filepath.join({contents_path, "Resources"})
+	contents_path, _ := filepath.join({app_path, "Contents"}, context.allocator)
+	macos_path, _ := filepath.join({contents_path, "MacOS"}, context.allocator)
+	resources_path, _ := filepath.join({contents_path, "Resources"}, context.allocator)
 
-	os.make_directory(app_path, 0o755)
-	os.make_directory(contents_path, 0o755)
-	os.make_directory(macos_path, 0o755)
-	os.make_directory(resources_path, 0o755)
+	os.make_directory(app_path)
+	os.make_directory(contents_path)
+	os.make_directory(macos_path)
+	os.make_directory(resources_path)
 
-	executable_path := filepath.join({macos_path, engine_name})
-	exe_handle, open_err := os.open(executable_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0o755)
+	executable_path, _ := filepath.join({macos_path, engine_name}, context.allocator)
+	exe_handle, open_err := os.open(executable_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
 	if open_err != 0 {
 		common.print_error(fmt.tprintf("Error opening executable for writing: %s", open_err))
 		return
@@ -144,10 +144,11 @@ create_macos_app_bundle :: proc(
 	write_build_header(exe_handle, assets_hash)
 	os.close(exe_handle)
 
-	assets_src := filepath.join({output_dir, DEFAULT_ASSETS_PATH})
-	assets_dst := filepath.join({macos_path, DEFAULT_ASSETS_PATH})
-	if assets_data, ok := os.read_entire_file(assets_src); ok {
-		os.write_entire_file(assets_dst, assets_data)
+	assets_src, _ := filepath.join({output_dir, DEFAULT_ASSETS_PATH}, context.allocator)
+	assets_dst, _ := filepath.join({macos_path, DEFAULT_ASSETS_PATH}, context.allocator)
+	if assets_data, err := os.read_entire_file_from_path(assets_src, context.allocator);
+	   err == nil {
+		_ = os.write_entire_file(assets_dst, assets_data)
 		delete(assets_data)
 		os.remove(assets_src)
 	}
@@ -156,26 +157,28 @@ create_macos_app_bundle :: proc(
 	if icon_path != "" && os.exists(icon_path) {
 		if strings.has_suffix(icon_path, ".icns") {
 			icon_file_name = "app.icns"
-			if icon_data, ok := os.read_entire_file(icon_path); ok {
-				icns_path := filepath.join({resources_path, icon_file_name})
+			if icon_data, err := os.read_entire_file_from_path(icon_path, context.allocator);
+			   err == nil {
+				icns_path, _ := filepath.join({resources_path, icon_file_name}, context.allocator)
 				defer delete(icns_path)
-				os.write_entire_file(icns_path, icon_data)
+				_ = os.write_entire_file(icns_path, icon_data)
 				delete(icon_data)
 			}
 		} else if strings.has_suffix(icon_path, ".png") {
 			icon_file_name = "app.png"
-			if icon_data, ok := os.read_entire_file(icon_path); ok {
-				png_path := filepath.join({resources_path, icon_file_name})
+			if icon_data, err := os.read_entire_file_from_path(icon_path, context.allocator);
+			   err == nil {
+				png_path, _ := filepath.join({resources_path, icon_file_name}, context.allocator)
 				defer delete(png_path)
-				os.write_entire_file(png_path, icon_data)
+				_ = os.write_entire_file(png_path, icon_data)
 				delete(icon_data)
 			}
 		}
 	} else {
 		icon_file_name = "app.icns"
-		icns_path := filepath.join({resources_path, icon_file_name})
+		icns_path, _ := filepath.join({resources_path, icon_file_name}, context.allocator)
 		defer delete(icns_path)
-		os.write_entire_file(icns_path, DEFAULT_ICON_MAC)
+		_ = os.write_entire_file(icns_path, DEFAULT_ICON_MAC)
 	}
 
 	icon_plist_entry :=
@@ -210,16 +213,16 @@ create_macos_app_bundle :: proc(
 	)
 	defer delete(info_plist_content)
 
-	info_plist_path := filepath.join({contents_path, "Info.plist"})
-	os.write_entire_file(info_plist_path, transmute([]byte)info_plist_content)
+	info_plist_path, _ := filepath.join({contents_path, "Info.plist"}, context.allocator)
+	_ = os.write_entire_file(info_plist_path, transmute([]byte)info_plist_content)
 }
 
 embed_linux_default_icon :: proc(output_path: string) {
 	output_dir := filepath.dir(output_path)
 	defer delete(output_dir)
-	icon_output := filepath.join({output_dir, "icon.png"})
+	icon_output, _ := filepath.join({output_dir, "icon.png"}, context.allocator)
 	defer delete(icon_output)
-	os.write_entire_file(icon_output, DEFAULT_ICON_LINUX)
+	_ = os.write_entire_file(icon_output, DEFAULT_ICON_LINUX)
 }
 
 embed_linux_icon :: proc(output_path: string, icon_path: string) {
@@ -230,10 +233,10 @@ embed_linux_icon :: proc(output_path: string, icon_path: string) {
 
 	output_dir := filepath.dir(output_path)
 	defer delete(output_dir)
-	icon_output := filepath.join({output_dir, "icon.png"})
+	icon_output, _ := filepath.join({output_dir, "icon.png"}, context.allocator)
 	defer delete(icon_output)
-	if icon_data, ok := os.read_entire_file(icon_path); ok {
-		os.write_entire_file(icon_output, icon_data)
+	if icon_data, err := os.read_entire_file_from_path(icon_path, context.allocator); err == nil {
+		_ = os.write_entire_file(icon_output, icon_data)
 		delete(icon_data)
 	}
 }
@@ -241,9 +244,9 @@ embed_linux_icon :: proc(output_path: string, icon_path: string) {
 embed_windows_default_icon :: proc(exe_path: string) {
 	exe_dir := filepath.dir(exe_path)
 	defer delete(exe_dir)
-	icon_output := filepath.join({exe_dir, "icon.ico"})
+	icon_output, _ := filepath.join({exe_dir, "icon.ico"}, context.allocator)
 	defer delete(icon_output)
-	os.write_entire_file(icon_output, DEFAULT_ICON_WINDOWS)
+	_ = os.write_entire_file(icon_output, DEFAULT_ICON_WINDOWS)
 }
 
 embed_windows_icon :: proc(exe_path: string, icon_path: string) {
@@ -261,18 +264,18 @@ embed_windows_icon :: proc(exe_path: string, icon_path: string) {
 
 	exe_dir := filepath.dir(exe_path)
 	defer delete(exe_dir)
-	icon_output := filepath.join({exe_dir, "icon.ico"})
+	icon_output, _ := filepath.join({exe_dir, "icon.ico"}, context.allocator)
 	defer delete(icon_output)
-	if icon_data, ok := os.read_entire_file(icon_path); ok {
-		os.write_entire_file(icon_output, icon_data)
+	if icon_data, err := os.read_entire_file_from_path(icon_path, context.allocator); err == nil {
+		_ = os.write_entire_file(icon_output, icon_data)
 		delete(icon_data)
 		common.print_info(fmt.tprintf("Icon copied to: %s", icon_output))
 	}
 }
 
 remove_console_window :: proc(exe_path: string) {
-	data, read_ok := os.read_entire_file(exe_path)
-	if !read_ok {
+	data, read_err := os.read_entire_file_from_path(exe_path, context.allocator)
+	if read_err != nil {
 		common.print_warning(
 			fmt.tprintf("Could not read executable to remove console: %s", exe_path),
 		)
@@ -305,6 +308,6 @@ remove_console_window :: proc(exe_path: string) {
 
 	if data[subsystem_offset] == 3 {
 		data[subsystem_offset] = 2
-		os.write_entire_file(exe_path, data)
+		_ = os.write_entire_file(exe_path, data)
 	}
 }

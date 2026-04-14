@@ -4,7 +4,7 @@ import "../common"
 import "core:os"
 
 ROOT_COMMAND :: Command {
-	subcommands = {RUN_COMMAND, BUILD_COMMAND, VERSION_COMMAND, SHADER_COMMAND},
+	subcommands = {RUN_COMMAND, BUILD_COMMAND, VERSION_COMMAND, SHADER_COMMAND, UPDATE_COMMAND},
 }
 
 main :: proc() {

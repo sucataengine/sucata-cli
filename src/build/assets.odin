@@ -40,10 +40,10 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 	total_size := 0
 
 	for file in files {
-		data, read_ok := os.read_entire_file(file)
+		data, read_err := os.read_entire_file_from_path(file, context.allocator)
 		defer delete(data)
 
-		if !read_ok {
+		if read_err != nil {
 			common.print_warning("File %s was not found!", file)
 			continue
 		}
@@ -90,13 +90,9 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 
 	archive_data := compressed_buffer[:compressed_size]
 
-	output_file_path := filepath.join({output_path, DEFAULT_ASSETS_PATH})
+	output_file_path, _ := filepath.join({output_path, DEFAULT_ASSETS_PATH}, context.allocator)
 	defer delete(output_file_path)
-	output_handle, open_err := os.open(
-		output_file_path,
-		os.O_WRONLY | os.O_CREATE | os.O_TRUNC,
-		0o644,
-	)
+	output_handle, open_err := os.open(output_file_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
 	defer os.close(output_handle)
 
 	json_data, json_err := json.marshal(entries[:])
@@ -115,7 +111,7 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 }
 
 get_assets_hash :: proc(assets_path: string) -> string {
-	file_data, read_ok := os.read_entire_file(assets_path)
+	file_data, _ := os.read_entire_file_from_path(assets_path, context.allocator)
 	defer delete(file_data)
 
 	hash_bytes: [32]byte
@@ -153,11 +149,11 @@ contains_file :: proc(path: string, files: ^[dynamic]string) -> bool {
 	return false
 }
 
-collect_paths :: proc(file_path: string, files: ^[dynamic]string) -> os.Errno {
-	file_content, ok := os.read_entire_file(file_path)
+collect_paths :: proc(file_path: string, files: ^[dynamic]string) -> os.Error {
+	file_content, read_err := os.read_entire_file_from_path(file_path, context.allocator)
 	defer delete(file_content)
-	if !ok {
-		return os.ERROR_NONE
+	if read_err != nil {
+		return nil
 	}
 
 	if !contains_file(file_path, files) {
@@ -183,11 +179,11 @@ collect_paths :: proc(file_path: string, files: ^[dynamic]string) -> os.Errno {
 		for match in regex.match_iterator(&interator_lua) {
 			match_path := lua_path_to_dir_path(match.groups[1])
 			err_collect_paths := collect_paths(match_path, files)
-			if err_collect_paths != os.ERROR_NONE {
+			if err_collect_paths != nil {
 				return err_collect_paths
 			}
 		}
 	}
 
-	return os.ERROR_NONE
+	return nil
 }

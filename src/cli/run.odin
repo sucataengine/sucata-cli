@@ -3,7 +3,6 @@ package cli
 import "../filesystem"
 import "core:fmt"
 import "core:os"
-import "core:os/os2"
 import "core:path/filepath"
 
 RUN_COMMAND :: Command {
@@ -13,21 +12,21 @@ RUN_COMMAND :: Command {
 	error_msg = "Error: 'run' command requires a <file> argument.",
 	handler = proc(args: []string) {
 		file_path_args := args[0]
-		current_directory := os.get_current_directory()
+		current_directory, err := os.get_working_directory(context.allocator)
 		defer delete(current_directory)
-		file_path := filepath.join({current_directory, file_path_args})
+		file_path, err2 := filepath.join({current_directory, file_path_args}, context.allocator)
 		defer delete(file_path)
 
 		sucata_path := filesystem.get_sucata_player_path()
 		defer delete(sucata_path)
 
-		process_desc := os2.Process_Desc {
+		process_desc := os.Process_Desc {
 			command = {sucata_path, file_path},
-			stdout  = os2.stdout,
-			stderr  = os2.stderr,
+			stdout  = os.stdout,
+			stderr  = os.stderr,
 		}
-		process, _ := os2.process_start(process_desc)
-		state, _ := os2.process_wait(process)
+		process, _ := os.process_start(process_desc)
+		state, _ := os.process_wait(process)
 
 		if state.exited {
 			fmt.printfln("Process exited with code: %d", state.exit_code)

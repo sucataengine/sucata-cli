@@ -1,9 +1,12 @@
 package main
 
-import cli "./cli"
+import "./cli"
+import "./common"
+import "./update"
 import "base:runtime"
+import "core:fmt"
 import "core:log"
-import "core:os/os2"
+import "core:os"
 import "core:strings"
 
 get_player_name :: proc() -> string {
@@ -14,10 +17,12 @@ get_player_name :: proc() -> string {
 }
 
 get_player_version :: proc() -> string {
-	state, stdout, stderr, err := os2.process_exec(
-		os2.Process_Desc{command = {get_player_name(), "--version"}},
+	state, stdout, stderr, err := os.process_exec(
+		os.Process_Desc{command = {get_player_name(), "--version"}},
 		context.allocator,
 	)
+	defer delete(stdout)
+	defer delete(stderr)
 
 	if err != nil || state.exit_code != 0 {
 		return strings.clone("unknown")
@@ -28,9 +33,20 @@ get_player_version :: proc() -> string {
 }
 
 main :: proc() {
-	context.logger = log.create_console_logger()
+	context.logger = log.create_console_logger(lowest = .Info)
+	defer log.destroy_console_logger(context.logger)
+
 	cli.version = get_player_version()
 	defer delete(cli.version)
+
+	version, is_old_version := update.check_version(cli.version)
+	defer delete(version)
+	if is_old_version {
+		common.print_warning(
+			"A new version is available! Sucata %s use: 'sucata update' to install",
+			version,
+		)
+	}
 
 	cli.main()
 }

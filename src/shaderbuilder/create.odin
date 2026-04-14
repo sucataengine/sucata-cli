@@ -118,15 +118,15 @@ void main() {
 
 create_default_quad :: proc(path: string) {
 	bytes := transmute([]u8)QUAD_DEFAULT
-	os.write_entire_file(path, bytes)
+	_ = os.write_entire_file(path, bytes)
 }
 
 create_default_post_processing :: proc(path: string) {
 	bytes := transmute([]u8)POST_PROCESSING_DEFAULT
-	os.write_entire_file(path, bytes)
+	_ = os.write_entire_file(path, bytes)
 }
 
 create_default_font_shader :: proc(path: string) {
 	bytes := transmute([]u8)FONT_DEFAULT
-	os.write_entire_file(path, bytes)
+	_ = os.write_entire_file(path, bytes)
 }

@@ -3,28 +3,36 @@ package shader_builder
 import "../common"
 import "../filesystem"
 import "core:fmt"
-import "core:os/os2"
+import "core:os"
 import "core:path/filepath"
 
 build_sokol_shader :: proc(input_file: string) -> (bool, string) {
 	sucata_path := filesystem.get_sucata_folder()
 	defer delete(sucata_path)
-	if !os2.exists(input_file) {
+	if !os.exists(input_file) {
 		common.print_error("Shader file does not exist: %s", input_file)
 		return false, ""
 	}
-	if !os2.exists(filepath.join({sucata_path, "temp"})) {
-		os2.make_directory(filepath.join({sucata_path, "temp"}))
+	temp_dir, _ := filepath.join({sucata_path, "temp"}, context.allocator)
+	defer delete(temp_dir)
+	if !os.exists(temp_dir) {
+		os.make_directory(temp_dir)
 	}
-	temp_shader_path := filepath.join({sucata_path, "temp", "shader"})
+	temp_shader_path, _ := filepath.join({sucata_path, "temp", "shader"}, context.allocator)
 
 	sokol_shdc_path := get_sokol_shdc_path()
 
 	if sokol_shdc_path == "" {
+		common.print_error("sokol-shdc for your OS was not found!")
 		return false, ""
 	}
 
-	process_desc := os2.Process_Desc {
+	if !os.exists(sokol_shdc_path) {
+		common.print_error("sokol-shdc is not installed!")
+		return false, ""
+	}
+
+	process_desc := os.Process_Desc {
 		command = {
 			sokol_shdc_path,
 			"-i",
@@ -38,17 +46,24 @@ build_sokol_shader :: proc(input_file: string) -> (bool, string) {
 		},
 	}
 
-	process_state, stdout_file, stderr_file, err := os2.process_exec(
+	process_state, stdout_file, stderr_file, err := os.process_exec(
 		process_desc,
 		context.allocator,
 	)
 	if err != nil {
 		common.print_error("Failed to execute process: %s", err)
-		os2.exit(1)
+		os.exit(1)
 	}
 
 	defer delete(stdout_file)
 	defer delete(stderr_file)
+
+	if len(stdout_file) > 0 {
+		common.print_info("[sokol-shdc] %s", string(stdout_file))
+	}
+	if len(stderr_file) > 0 {
+		common.print_error("[sokol-shdc] %s", string(stderr_file))
+	}
 
 	output_temp_path := fmt.aprintf("{}_reflection.yaml", temp_shader_path)
 	return true, output_temp_path
@@ -62,18 +77,18 @@ get_sokol_shdc_path :: proc() -> string {
 	shdc_path := ""
 
 	when ODIN_OS == .Windows {
-		shdc_path = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-win.exe"})
+		shdc_path, _ = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-win.exe"}, context.allocator)
 	} else when ODIN_OS == .Darwin {
 		when ODIN_ARCH == .arm64 {
-			shdc_path = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-osx-arm"})
+			shdc_path, _ = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-osx-arm"}, context.allocator)
 		} else {
-			shdc_path = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-osx"})
+			shdc_path, _ = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-osx"}, context.allocator)
 		}
 	} else when ODIN_OS == .Linux {
 		when ODIN_ARCH == .arm64 {
-			shdc_path = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-linux-arm"})
+			shdc_path, _ = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-linux-arm"}, context.allocator)
 		} else {
-			shdc_path = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-linux"})
+			shdc_path, _ = filepath.join({sucata_path, "sokol-shdc", "sokol-shdc-linux"}, context.allocator)
 		}
 	}
 

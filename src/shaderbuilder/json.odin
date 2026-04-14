@@ -17,10 +17,13 @@ inject_shader_data :: proc(yaml_data: ^YamlValue) -> ^YamlValue {
 		vertex_path := vertex_func["path"].(string)
 		fragment_path := fragment_func["path"].(string)
 
-		vertex_data, vertex_ok := os.read_entire_file_from_filename(vertex_path)
-		fragment_data, fragment_ok := os.read_entire_file_from_filename(fragment_path)
+		vertex_data, vertex_err := os.read_entire_file_from_path(vertex_path, context.allocator)
+		fragment_data, fragment_err := os.read_entire_file_from_path(
+			fragment_path,
+			context.allocator,
+		)
 
-		if !vertex_ok || !fragment_ok {
+		if vertex_err != nil || fragment_err != nil {
 			common.print_error("Failed to read shader files: %s, %s", vertex_path, fragment_path)
 			continue
 		}
@@ -35,9 +38,9 @@ inject_shader_data :: proc(yaml_data: ^YamlValue) -> ^YamlValue {
 }
 
 generate_json :: proc(yaml_path: string, output_path: string) -> (string, bool) {
-	data, data_ok := os.read_entire_file_from_filename(yaml_path)
+	data, data_ok := os.read_entire_file_from_path(yaml_path, context.allocator)
 
-	if !data_ok {
+	if data_ok != nil {
 		common.print_error("Failed to read generated shader file: %s", yaml_path)
 		return "", false
 	}
@@ -55,7 +58,7 @@ generate_json :: proc(yaml_path: string, output_path: string) -> (string, bool) 
 		return "", false
 	}
 
-	os.write_entire_file(output_path, json_data)
+	_ = os.write_entire_file(output_path, json_data)
 
 	return output_path, true
 }
