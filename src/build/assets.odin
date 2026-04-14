@@ -12,6 +12,7 @@ import "core:os"
 import "core:path/filepath"
 import "core:strings"
 import "core:text/regex"
+import lua "shared:luajit"
 import "vendor:compress/lz4"
 
 LUA_REQUIRE_REGEX :: `require\s*\(\s*["']([^"']+)["']\s*\)`
@@ -26,6 +27,9 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 	common.print_info("Packaging assets...")
 	common.print_info("Found %d files to package. src: %s", len(files), src_path)
 
+	L := lua.L_newstate()
+	defer lua.close(L)
+
 	entries := make([dynamic]common.Asset_Entry)
 	defer {
 		for entry in entries {
@@ -33,6 +37,7 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 		}
 		delete(entries)
 	}
+
 	buf: bytes.Buffer
 	bytes.buffer_init_allocator(&buf, 0, 0, context.allocator)
 	defer bytes.buffer_destroy(&buf)
@@ -64,15 +69,39 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 			rel_path = normalized_path
 		}
 
+		final_data: []byte
+		bytecode_buf: [dynamic]byte
+		is_bytecode := false
+
+		is_lua := strings.has_suffix(file, ".lua")
+		if is_lua {
+			bc, compiled := compile_lua_to_bytecode(L, data, rel_path)
+			if compiled {
+				bytecode_buf = bc
+				final_data = bytecode_buf[:]
+				is_bytecode = true
+				common.print_info("  [lua] %s -> bytecode (%d bytes)", rel_path, len(bc))
+			} else {
+				common.print_warning("  [lua] %s compile falhou, usando source", rel_path)
+				final_data = data
+			}
+		} else {
+			final_data = data
+		}
+
+		defer if is_bytecode {
+			delete(bytecode_buf)
+		}
+
 		entry := common.Asset_Entry {
 			path   = rel_path,
-			size   = len(data),
+			size   = len(final_data),
 			offset = total_size,
 		}
 		append(&entries, entry)
 
-		bytes.buffer_write(&buf, data)
-		total_size += len(data)
+		bytes.buffer_write(&buf, final_data)
+		total_size += len(final_data)
 	}
 
 	uncompressed_data := bytes.buffer_to_bytes(&buf)

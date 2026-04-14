@@ -129,17 +129,17 @@ create_macos_app_bundle :: proc(
 	executable_path, _ := filepath.join({macos_path, engine_name}, context.allocator)
 	exe_handle, open_err := os.open(executable_path, os.O_WRONLY | os.O_CREATE | os.O_TRUNC)
 	if open_err != 0 {
-		common.print_error(fmt.tprintf("Error opening executable for writing: %s", open_err))
+		common.print_error("Error opening executable for writing: %s", open_err)
 		return
 	}
 
 	bytes_written, write_err := os.write(exe_handle, engine_data)
 	if write_err != 0 {
-		common.print_error(fmt.tprintf("Error writing engine data: %s", write_err))
+		common.print_error("Error writing engine data: %s", write_err)
 		os.close(exe_handle)
 		return
 	}
-	common.print_info(fmt.tprintf("Written %d bytes of engine data", bytes_written))
+	common.print_info("Written %d bytes of engine data", bytes_written)
 
 	write_build_header(exe_handle, assets_hash)
 	os.close(exe_handle)
@@ -227,7 +227,7 @@ embed_linux_default_icon :: proc(output_path: string) {
 
 embed_linux_icon :: proc(output_path: string, icon_path: string) {
 	if !os.exists(icon_path) {
-		common.print_warning(fmt.tprintf("Icon file not found: %s", icon_path))
+		common.print_warning("Icon file not found: %s", icon_path)
 		return
 	}
 
@@ -251,14 +251,12 @@ embed_windows_default_icon :: proc(exe_path: string) {
 
 embed_windows_icon :: proc(exe_path: string, icon_path: string) {
 	if !os.exists(icon_path) {
-		common.print_warning(fmt.tprintf("Icon file not found: %s", icon_path))
+		common.print_warning("Icon file not found: %s", icon_path)
 		return
 	}
 
 	if !strings.has_suffix(icon_path, ".ico") {
-		common.print_warning(
-			fmt.tprintf("Windows requires .ico format for icons. Provided: %s", icon_path),
-		)
+		common.print_warning("Windows requires .ico format for icons. Provided: %s", icon_path)
 		return
 	}
 
@@ -269,16 +267,14 @@ embed_windows_icon :: proc(exe_path: string, icon_path: string) {
 	if icon_data, err := os.read_entire_file_from_path(icon_path, context.allocator); err == nil {
 		_ = os.write_entire_file(icon_output, icon_data)
 		delete(icon_data)
-		common.print_info(fmt.tprintf("Icon copied to: %s", icon_output))
+		common.print_info("Icon copied to: %s", icon_output)
 	}
 }
 
 remove_console_window :: proc(exe_path: string) {
 	data, read_err := os.read_entire_file_from_path(exe_path, context.allocator)
 	if read_err != nil {
-		common.print_warning(
-			fmt.tprintf("Could not read executable to remove console: %s", exe_path),
-		)
+		common.print_warning("Could not read executable to remove console: %s", exe_path)
 		return
 	}
 	defer delete(data)
