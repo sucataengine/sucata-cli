@@ -82,7 +82,7 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 				is_bytecode = true
 				common.print_info("  [lua] %s -> bytecode (%d bytes)", rel_path, len(bc))
 			} else {
-				common.print_warning("  [lua] %s compile falhou, usando source", rel_path)
+				common.print_warning("  [lua] %s compile failed, using source", rel_path)
 				final_data = data
 			}
 		} else {
