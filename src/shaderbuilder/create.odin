@@ -9,32 +9,32 @@ layout(binding=0) uniform vs_params {
 };
 
 in vec2 position;
-in vec4 col;
+in vec4 color;
 in vec2 uv;
 
-out vec4 color;
+out vec4 texcolor;
 out vec2 texcoord;
 
 void main() {
     gl_Position = mvp * vec4(position, 0.0, 1.0);
-    color = col;
+    texcolor = color;
     texcoord = uv;
 }
 @end
 
 /* quad fragment shader */
 @fs fs
-layout(binding=0) uniform texture2D tex;
-layout(binding=0) uniform sampler smp;
+layout(binding=0) uniform texture2D source_texture;
+layout(binding=0) uniform sampler source_sampler;
 
-in vec4 color;
+in vec4 texcolor;
 in vec2 texcoord;
 
 out vec4 frag_color;
 
 void main() {
-    vec4 tex_color = texture(sampler2D(tex,smp), texcoord);
-    vec4 final_color = tex_color * color;
+    vec4 tex_color = texture(sampler2D(source_texture,source_sampler), texcoord);
+    vec4 final_color = tex_color * texcolor;
     
     frag_color = final_color;
 }
@@ -44,6 +44,7 @@ void main() {
 @program quad vs fs
 `
 
+
 FONT_DEFAULT: string = `/* text vertex shader */
 @vs vs
 layout(binding=0) uniform vs_params {
@@ -51,31 +52,31 @@ layout(binding=0) uniform vs_params {
 };
 
 in vec2 position;
-in vec4 col;
+in vec4 color;
 in vec2 uv;
 
-out vec4 color;
+out vec4 texcolor;
 out vec2 texcoord;
 
 void main() {
     gl_Position = mvp * vec4(position, 0.0, 1.0);
-    color = col;
+    texcolor = color;
     texcoord = uv;
 }
 @end
 
 /* text fragment shader */
 @fs fs
-layout(binding=0) uniform texture2D tex;
-layout(binding=0) uniform sampler smp;
+layout(binding=0) uniform texture2D source_texture;
+layout(binding=0) uniform sampler source_sampler;
 
-in vec4 color;
+in vec4 texcolor;
 in vec2 texcoord;
 
 out vec4 frag_color;
 
 void main() {
-    vec4 tex_color = texture(sampler2D(tex,smp), texcoord);
+    vec4 tex_color = texture(sampler2D(source_texture,source_sampler), texcoord);
     float alpha = tex_color.r * color.a;
     frag_color = vec4(color.rgb, alpha);
 }
@@ -85,36 +86,34 @@ void main() {
 @program text vs fs
 `
 
+
 POST_PROCESSING_DEFAULT: string = `/* post-processing vertex shader */
 @vs vs
-layout(location = 0) in vec2 a_pos;
-layout(location = 1) in vec2 a_uv;
+in vec2 position;
+in vec2 uv;
 
-out vec2 v_uv;
+out vec2 texcoord;
 
 void main() {
-    v_uv = a_uv;
-    gl_Position = vec4(a_pos, 0.0, 1.0);
+    gl_Position = vec4(position, 0.0, 1.0);
+    texcoord    = uv;
 }
 @end
 
-/* post-processing fragment shader */
 @fs fs
-uniform sampler2D u_scene;
+layout(binding=0) uniform texture2D screen_texture;
+layout(binding=0) uniform sampler   screen_sampler;
 
-in vec2 v_uv;
+in  vec2 texcoord;
 out vec4 frag_color;
 
 void main() {
-    vec4 color = texture(u_scene, v_uv);
-
-    float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-    frag_color = vec4(vec3(gray), color.a);
+    frag_color = texture(sampler2D(screen_texture, screen_sampler), texcoord);
 }
 @end
 
-/* quad shader program */
-@program quad vs fs`
+@program shader_post_processing vs fs`
+
 
 create_default_quad :: proc(path: string) {
 	bytes := transmute([]u8)QUAD_DEFAULT
