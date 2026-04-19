@@ -38,6 +38,7 @@ free_yaml_value :: proc(value: ^YamlValue) {
 
 parse_yaml :: proc(data: string) -> YamlValue {
 	lines := strings.split_lines(data)
+	defer delete(lines)
 	line_index := 0
 	result := parse_yaml_recursive(lines, &line_index, 0)
 	return result
@@ -74,12 +75,14 @@ parse_yaml_recursive :: proc(lines: []string, line_index: ^int, base_indent: int
 		if strings.contains(trimmed, ":") {
 			parts := strings.split_n(trimmed, ":", 2)
 			if len(parts) != 2 {
+				delete(parts)
 				line_index^ += 1
 				continue
 			}
 
 			key := strings.clone(strings.trim_space(parts[0]))
 			value_str := strings.trim_space(parts[1])
+			delete(parts)
 
 			line_index^ += 1
 
@@ -126,8 +129,9 @@ parse_yaml_list :: proc(lines: []string, line_index: ^int, base_indent: int) -> 
 			if strings.contains(rest, ":") && rest != "" {
 				parts := strings.split_n(rest, ":", 2)
 				if len(parts) == 2 {
-					key := strings.trim_space(parts[0])
+					key := strings.clone(strings.trim_space(parts[0]))
 					value_str := strings.trim_space(parts[1])
+					delete(parts)
 
 					item: map[string]YamlValue
 
@@ -149,6 +153,7 @@ parse_yaml_list :: proc(lines: []string, line_index: ^int, base_indent: int) -> 
 
 					append(&result, item)
 				} else {
+					delete(parts)
 					line_index^ += 1
 				}
 			} else if rest == "" {

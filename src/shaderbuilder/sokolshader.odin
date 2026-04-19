@@ -19,8 +19,10 @@ build_sokol_shader :: proc(input_file: string) -> (bool, string) {
 		os.make_directory(temp_dir)
 	}
 	temp_shader_path, _ := filepath.join({sucata_path, "temp", "shader"}, context.allocator)
+	defer delete(temp_shader_path)
 
 	sokol_shdc_path := get_sokol_shdc_path()
+	defer delete(sokol_shdc_path)
 
 	if sokol_shdc_path == "" {
 		common.print_error("sokol-shdc for your OS was not found!")

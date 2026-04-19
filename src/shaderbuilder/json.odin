@@ -24,6 +24,8 @@ inject_shader_data :: proc(yaml_data: ^YamlValue) -> ^YamlValue {
 		)
 
 		if vertex_err != nil || fragment_err != nil {
+			if vertex_err == nil { delete(vertex_data) }
+			if fragment_err == nil { delete(fragment_data) }
 			common.print_error("Failed to read shader files: %s, %s", vertex_path, fragment_path)
 			continue
 		}
@@ -44,6 +46,7 @@ generate_json :: proc(yaml_path: string, output_path: string) -> (string, bool) 
 		common.print_error("Failed to read generated shader file: %s", yaml_path)
 		return "", false
 	}
+	defer delete(data)
 
 	data_string := string(data)
 	yaml_data := parse_yaml(data_string)

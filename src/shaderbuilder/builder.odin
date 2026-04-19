@@ -7,8 +7,10 @@ import "core:strings"
 
 build_shader :: proc(input_file: string) -> (string, bool) {
 	ok, temp_path := build_sokol_shader(input_file)
+	defer delete(temp_path)
 
 	shader_name_dots := strings.split(filepath.base(input_file), ".")
+	defer delete(shader_name_dots)
 	shader_name := shader_name_dots[0]
 	input_dir := filepath.dir(input_file)
 	output_file_name := fmt.aprintf("%s.schd", shader_name)

@@ -27,6 +27,7 @@ SHADER_BUILD_COMMAND :: Command {
 		defer delete(current_directory)
 
 		file_path, _ := filepath.join({current_directory, file_path_args}, context.allocator)
+		defer delete(file_path)
 
 		filesystem.init_run_paths(file_path, "shader.glsl")
 
