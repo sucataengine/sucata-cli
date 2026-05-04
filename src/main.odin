@@ -4,6 +4,7 @@ import "./cli"
 import "base:runtime"
 import "core:log"
 import "core:os"
+import "core:path/filepath"
 import "core:strings"
 
 get_player_name :: proc() -> string {
@@ -13,9 +14,18 @@ get_player_name :: proc() -> string {
 	return "sucata-player"
 }
 
+get_player_path :: proc() -> string {
+	current_path, _ := os.get_executable_directory(context.allocator)
+	defer delete(current_path)
+	result, _ := filepath.join({current_path, get_player_name()}, context.allocator)
+	return result
+}
+
 get_player_version :: proc() -> string {
+	player_path := get_player_path()
+	defer delete(player_path)
 	state, stdout, stderr, err := os.process_exec(
-		os.Process_Desc{command = {get_player_name(), "--version"}},
+		os.Process_Desc{command = {player_path, "--version"}},
 		context.allocator,
 	)
 	defer delete(stdout)

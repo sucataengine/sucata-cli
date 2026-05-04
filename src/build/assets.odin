@@ -12,7 +12,7 @@ import "core:os"
 import "core:path/filepath"
 import "core:strings"
 import "core:text/regex"
-import lua "shared:luajit"
+import lua "shared:lua55"
 import "vendor:compress/lz4"
 
 LUA_REQUIRE_REGEX :: `require\s*\(\s*["']([^"']+)["']\s*\)`

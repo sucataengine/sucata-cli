@@ -5,7 +5,7 @@ import "base:runtime"
 import "core:c"
 import "core:slice"
 import "core:strings"
-import lua "shared:luajit"
+import lua "shared:lua55"
 
 @(private)
 Dump_Buffer :: struct {
@@ -13,10 +13,18 @@ Dump_Buffer :: struct {
 }
 
 @(private)
-lua_writer :: proc "c" (L: ^lua.State, p: rawptr, sz: c.size_t, ud: rawptr) -> c.int {
+lua_writer :: proc "c" (L: ^lua.State, p: rawptr, sz: ^c.size_t, ud: rawptr) -> c.int {
 	context = runtime.default_context()
+	if p == nil || sz^ == 0 {
+		return 0
+	}
+
 	buf := cast(^Dump_Buffer)ud
-	chunk := slice.from_ptr(cast(^byte)p, int(sz))
+	if buf == nil {
+		return 1
+	}
+
+	chunk := slice.from_ptr(cast(^byte)p, int(sz^))
 	append(&buf.data, ..chunk)
 	return 0
 }
@@ -42,7 +50,7 @@ compile_lua_to_bytecode :: proc(
 	buf: Dump_Buffer
 	buf.data = make([dynamic]byte)
 
-	dump_status := lua.dump(L, lua_writer, &buf)
+	dump_status := lua.dump(L, lua_writer, &buf, true)
 	lua.pop(L, 1)
 
 	if dump_status != .OK {
