@@ -3,9 +3,10 @@ package build
 import "../common"
 import "base:runtime"
 import "core:c"
+import "core:fmt"
 import "core:slice"
 import "core:strings"
-import lua "shared:lua55"
+import lua "vendor:lua/5.4"
 
 @(private)
 Dump_Buffer :: struct {
@@ -13,9 +14,11 @@ Dump_Buffer :: struct {
 }
 
 @(private)
-lua_writer :: proc "c" (L: ^lua.State, p: rawptr, sz: ^c.size_t, ud: rawptr) -> c.int {
+lua_writer :: proc "c" (L: ^lua.State, p: rawptr, sz: c.size_t, ud: rawptr) -> c.int {
 	context = runtime.default_context()
-	if p == nil || sz^ == 0 {
+
+	size := int(sz)
+	if p == nil || size == 0 {
 		return 0
 	}
 
@@ -24,7 +27,7 @@ lua_writer :: proc "c" (L: ^lua.State, p: rawptr, sz: ^c.size_t, ud: rawptr) -> 
 		return 1
 	}
 
-	chunk := slice.from_ptr(cast(^byte)p, int(sz^))
+	chunk := slice.from_ptr(cast(^byte)p, size)
 	append(&buf.data, ..chunk)
 	return 0
 }

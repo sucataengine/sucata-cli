@@ -12,8 +12,8 @@ import "core:os"
 import "core:path/filepath"
 import "core:strings"
 import "core:text/regex"
-import lua "shared:lua55"
 import "vendor:compress/lz4"
+import lua "vendor:lua/5.4"
 
 LUA_REQUIRE_REGEX :: `require\s*\(\s*["']([^"']+)["']\s*\)`
 FILES_REGEX :: `["']((?:src)://[^"']+)["']`
@@ -28,7 +28,13 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 	common.print_info("Found %d files to package. src: %s", len(files), src_path)
 
 	L := lua.L_newstate()
+	if L == nil {
+		common.print_error("Failed to create Lua state")
+		return ""
+	}
 	defer lua.close(L)
+
+	lua.L_openlibs(L)
 
 	entries := make([dynamic]common.Asset_Entry)
 	defer {
