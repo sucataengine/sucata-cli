@@ -3,7 +3,7 @@ package update
 import "core:strings"
 import "shared:http/client"
 
-VERSION_URL :: "https://codeberg.org/sucata/sucata/raw/branch/main/VERSION"
+VERSION_URL :: "https://github.com/sucataengine/sucata/raw/branch/main/VERSION"
 
 get_last_version :: proc() -> (string, bool) {
 	res, err := client.get(VERSION_URL)
