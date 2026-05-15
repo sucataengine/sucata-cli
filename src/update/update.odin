@@ -6,11 +6,11 @@ import "core:os"
 get_update_command :: proc() -> string {
 	when ODIN_OS == .Windows {
 		return fmt.tprintf(
-			"Start-Sleep -Seconds 3; irm https://github.com/sucataengine/sucata/raw/branch/main/install_windows.ps1 | iex",
+			"Start-Sleep -Seconds 3; irm https://github.com/sucata-engine/sucata-engine/raw/branch/main/install_windows.ps1 | iex",
 		)
 	} else {
 		return fmt.tprintf(
-			"sleep 3 && curl -fsSL https://github.com/sucataengine/sucata/raw/branch/main/install_unix.sh | bash",
+			"sleep 3 && curl -fsSL https://github.com/sucata-engine/sucata-engine/raw/branch/main/install_unix.sh | bash",
 		)
 	}
 }
