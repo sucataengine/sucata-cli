@@ -18,14 +18,29 @@ import lua "vendor:lua/5.4"
 LUA_REQUIRE_REGEX :: `require\s*\(\s*["']([^"']+)["']\s*\)`
 FILES_REGEX :: `["']((?:src)://[^"']+)["']`
 
-generate_assets :: proc(src_path: string, main_file: string, output_path: string) -> string {
+generate_assets :: proc(
+	src_path: string,
+	main_file: string,
+	output_path: string,
+	optimize: bool = false,
+) -> string {
 	files := make([dynamic]string)
-	defer delete(files)
+	defer {
+		for file in files {
+			if file != main_file {
+				delete(file)
+			}
+		}
+		delete(files)
+	}
 
 	collect_paths(main_file, &files)
 
 	common.print_info("Packaging assets...")
 	common.print_info("Found %d files to package. src: %s", len(files), src_path)
+	if optimize {
+		common.print_info("Optimize mode enabled: opaque images will be recompressed as JPEG")
+	}
 
 	L := lua.L_newstate()
 	if L == nil {
@@ -78,6 +93,7 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 		final_data: []byte
 		bytecode_buf: [dynamic]byte
 		is_bytecode := false
+		is_compressed_image := false
 
 		is_lua := strings.has_suffix(file, ".lua")
 		if is_lua {
@@ -93,10 +109,20 @@ generate_assets :: proc(src_path: string, main_file: string, output_path: string
 			}
 		} else {
 			final_data = data
+			if optimize {
+				compressed, was_compressed := compress_image(rel_path, data)
+				if was_compressed {
+					final_data = compressed
+					is_compressed_image = true
+				}
+			}
 		}
 
 		defer if is_bytecode {
 			delete(bytecode_buf)
+		}
+		defer if is_compressed_image {
+			delete(final_data)
 		}
 
 		entry := common.Asset_Entry {
@@ -167,12 +193,13 @@ lua_path_to_dir_path :: proc(req: string) -> string {
 		}
 	}
 
-	init_lua := fmt.tprintf("%s/%s/init.lua", base_dir, path)
+	init_lua := fmt.aprintf("%s/%s/init.lua", base_dir, path)
 	if os.exists(init_lua) {
 		return init_lua
 	}
+	delete(init_lua)
 
-	return fmt.tprintf("%s/%s.lua", base_dir, path)
+	return fmt.aprintf("%s/%s.lua", base_dir, path)
 }
 
 contains_file :: proc(path: string, files: ^[dynamic]string) -> bool {
@@ -204,6 +231,8 @@ collect_paths :: proc(file_path: string, files: ^[dynamic]string) -> os.Error {
 			match_path := filesystem.get_path(match.groups[1])
 			if !contains_file(match_path, files) {
 				append(files, match_path)
+			} else {
+				delete(match_path)
 			}
 		}
 	}
@@ -213,6 +242,10 @@ collect_paths :: proc(file_path: string, files: ^[dynamic]string) -> os.Error {
 	if err_lua == nil {
 		for match in regex.match_iterator(&interator_lua) {
 			match_path := lua_path_to_dir_path(match.groups[1])
+			if contains_file(match_path, files) {
+				delete(match_path)
+				continue
+			}
 			err_collect_paths := collect_paths(match_path, files)
 			if err_collect_paths != nil {
 				return err_collect_paths

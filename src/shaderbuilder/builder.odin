@@ -14,7 +14,6 @@ build_shader :: proc(input_file: string) -> (string, bool) {
 	shader_name := shader_name_dots[0]
 	input_dir := filepath.dir(input_file)
 	output_file_name := fmt.aprintf("%s.schd", shader_name)
-	defer delete(input_dir)
 	defer delete(output_file_name)
 
 	output_path, _ := filepath.join({input_dir, output_file_name}, context.allocator)

@@ -9,7 +9,7 @@ import "core:path/filepath"
 BUILD_COMMAND :: Command {
 	command = "build",
 	args_size = 1,
-	info_msg = "sucata build <file> [--icon <path>] - Build a Sucata Lua script file",
+	info_msg = "sucata build <file> [--icon <path>] [--optimize] - Build a Sucata Lua script file",
 	error_msg = "Error: 'build' command requires a <file> argument.",
 	handler = proc(args: []string) {
 		file_path := args[0]
@@ -21,10 +21,13 @@ BUILD_COMMAND :: Command {
 		filesystem.init_run_paths(file_path)
 
 		icon_path := ""
+		optimize := false
 		for i := 1; i < len(args); i += 1 {
 			if args[i] == "--icon" && i + 1 < len(args) {
 				icon_path, _ = filepath.join({current_dir, args[i + 1]}, context.allocator)
 				i += 1
+			} else if args[i] == "--optimize" {
+				optimize = true
 			}
 		}
 
@@ -40,6 +43,7 @@ BUILD_COMMAND :: Command {
 			filesystem.location.src,
 			filesystem.location.file,
 			build_path,
+			optimize,
 		)
 		defer delete(assets_hash)
 
