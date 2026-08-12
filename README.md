@@ -1,6 +1,18 @@
 # Sucata CLI
 
-This is the Sucata CLI that helps the user to develop with sucata, see [sucata-player](https://github.com/sucata-engine/sucata-player) for more
+The `sucata` command-line tool for the [Sucata](https://sucata.dev) 2D game engine — used to `run` a game during development, `build` it into a standalone distributable, and compile custom `.glsl` shaders. It drives the sibling [sucata-player](https://github.com/sucata-engine/sucata-player) runtime, which contains the actual engine.
+
+Written in [Odin](https://odin-lang.org/).
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `sucata run <main.lua>` | Run a game through the `sucata-player` runtime in dev mode. |
+| `sucata build <main.lua>` | Package a game into a native, OS-specific distributable. |
+| `sucata shader build\|create <file.glsl>` | Compile or scaffold a custom shader. |
+| `sucata update` | Self-update the CLI. |
+| `sucata version` | Print CLI/engine version. |
 
 ## Shared Folder
 
