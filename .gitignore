@@ -2,6 +2,7 @@
 *.lua
 *.exe
 *.ignore
+!sokol-shdc/sokol-shdc-win.exe
 
 sucata
 sucata-player
